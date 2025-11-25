@@ -2,3 +2,4 @@ rootProject.name = 'gitlab4j'
 
 include(':gitlab4j-models')
 include(':gitlab4j-api')
+include(':gitlab4j-stats-demo')
