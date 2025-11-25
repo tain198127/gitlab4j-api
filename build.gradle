@@ -14,48 +14,50 @@ group = groupId
 
 def repositoryPath = 'build/staging-deploy'
 subprojects {
-    apply plugin: 'java-library'
-    apply plugin: 'com.diffplug.spotless'
-    apply plugin: 'maven-publish'
-    apply plugin: 'org.kordamp.gradle.jandex'
+    if (project.name != 'gitlab4j-stats-demo') {
+        apply plugin: 'java-library'
+        apply plugin: 'com.diffplug.spotless'
+        apply plugin: 'maven-publish'
+        apply plugin: 'org.kordamp.gradle.jandex'
 
-    group = groupId
+        group = groupId
 
-    java {
-        withJavadocJar()
-        withSourcesJar()
-
-        compileJava.options.encoding = "UTF-8"
-        toolchain {
-            languageVersion = JavaLanguageVersion.of(11)
-        }
-    }
-
-    spotless {
         java {
-            palantirJavaFormat()
-            importOrder 'java', 'javax', 'jakarta', 'org', 'com', ''
-            removeUnusedImports()
+            withJavadocJar()
+            withSourcesJar()
+
+            compileJava.options.encoding = "UTF-8"
+            toolchain {
+                languageVersion = JavaLanguageVersion.of(11)
+            }
         }
-    }
 
-    repositories {
-        // mavenLocal()
-        mavenCentral()
-    }
+        spotless {
+            java {
+                palantirJavaFormat()
+                importOrder 'java', 'javax', 'jakarta', 'org', 'com', ''
+                removeUnusedImports()
+            }
+        }
 
-    tasks.named('test') {
-        useJUnitPlatform()
-    }
-
-    tasks.named("javadoc") {
-        inputs.files(tasks.getByPath("jandex").outputs.files)
-    }
-
-    publishing {
         repositories {
-            maven {
-                url = rootProject.file(repositoryPath)
+            // mavenLocal()
+            mavenCentral()
+        }
+
+        tasks.named('test') {
+            useJUnitPlatform()
+        }
+
+        tasks.named("javadoc") {
+            inputs.files(tasks.getByPath("jandex").outputs.files)
+        }
+
+        publishing {
+            repositories {
+                maven {
+                    url = rootProject.file(repositoryPath)
+                }
             }
         }
     }
