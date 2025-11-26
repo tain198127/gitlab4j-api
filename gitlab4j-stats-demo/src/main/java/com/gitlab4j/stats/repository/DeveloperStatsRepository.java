@@ -27,4 +27,10 @@ public interface DeveloperStatsRepository extends JpaRepository<DeveloperStats, 
 
     @Query("SELECT d FROM DeveloperStats d WHERE d.developerName LIKE %:name%")
     List<DeveloperStats> findByDeveloperNameContaining(@Param("name") String name);
+
+    @Query("SELECT SUM(d.totalLinesAdded) FROM DeveloperStats d")
+    Integer getTotalLinesAdded();
+
+    @Query("SELECT SUM(d.totalLinesDeleted) FROM DeveloperStats d")
+    Integer getTotalLinesDeleted();
 }

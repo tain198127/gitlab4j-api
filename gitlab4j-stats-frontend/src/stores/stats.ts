@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import axios from 'axios'
 import type { SummaryStats } from '@/types'
 import { statisticsApi } from '@/utils/api'
 
@@ -12,11 +13,22 @@ export const useStatsStore = defineStore('stats', () => {
     loading.value = true
     error.value = null
     try {
+      console.log('Fetching summary stats from API...')
       const response = await statisticsApi.getSummaryStats()
+      console.log('Summary stats response:', response.data)
       summaryStats.value = response.data
     } catch (err) {
       error.value = 'Failed to fetch summary statistics'
       console.error('Error fetching summary stats:', err)
+      if (axios.isAxiosError(err)) {
+        console.error('Axios error details:', {
+          message: err.message,
+          status: err.response?.status,
+          statusText: err.response?.statusText,
+          data: err.response?.data,
+          url: err.config?.url
+        })
+      }
     } finally {
       loading.value = false
     }

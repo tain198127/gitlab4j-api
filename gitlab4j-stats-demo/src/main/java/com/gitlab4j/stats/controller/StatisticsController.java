@@ -19,7 +19,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 
 @RestController
-@RequestMapping("/api/stats")
+@RequestMapping("/stats")
 @CrossOrigin(origins = "*")
 @Api(tags = "GitLab Statistics API", description = "Provides comprehensive statistics and analytics for GitLab projects")
 public class StatisticsController {

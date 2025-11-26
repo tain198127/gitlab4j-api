@@ -157,20 +157,16 @@ public class StatisticsService {
     public SummaryStatsDTO getSummaryStats() {
         Integer totalLinesChanged = developerStatsRepository.getTotalLinesChanged();
         Integer totalCommits = developerStatsRepository.getTotalCommits();
-        Integer totalLinesAdded = developerStatsRepository.findAll().stream()
-                .mapToInt(s -> s.getTotalLinesAdded() != null ? s.getTotalLinesAdded() : 0)
-                .sum();
-        Integer totalLinesDeleted = developerStatsRepository.findAll().stream()
-                .mapToInt(s -> s.getTotalLinesDeleted() != null ? s.getTotalLinesDeleted() : 0)
-                .sum();
+        Integer totalLinesAdded = developerStatsRepository.getTotalLinesAdded();
+        Integer totalLinesDeleted = developerStatsRepository.getTotalLinesDeleted();
         Integer totalDevelopers = developerStatsRepository.findAll().size();
         Integer totalProjects = projectStatsRepository.findAll().size();
 
         return new SummaryStatsDTO(
                 totalDevelopers,
                 totalCommits != null ? totalCommits : 0,
-                totalLinesAdded,
-                totalLinesDeleted,
+                totalLinesAdded != null ? totalLinesAdded : 0,
+                totalLinesDeleted != null ? totalLinesDeleted : 0,
                 totalLinesChanged != null ? totalLinesChanged : 0,
                 totalProjects);
     }
@@ -278,12 +274,16 @@ public class StatisticsService {
     }
 
     public List<DeveloperActivityDTO> getDeveloperActivity(LocalDate startDate, LocalDate endDate) {
-        LocalDateTime start = startDate != null
-                ? startDate.atStartOfDay()
-                : LocalDateTime.now().minusMonths(1);
-        LocalDateTime end = endDate != null ? endDate.atTime(23, 59, 59) : LocalDateTime.now();
-
-        return commitDetailRepository.findByCommitDateBetweenOrderByCommitDateDesc(start, end).stream()
+        LocalDateTime startDateTime = startDate != null ? startDate.atStartOfDay() : LocalDateTime.now().minusDays(30);
+        LocalDateTime endDateTime = endDate != null ? endDate.atTime(23, 59, 59) : LocalDateTime.now();
+        
+        return commitDetailRepository.findAll().stream()
+                .filter(commit -> {
+                    LocalDateTime commitDate = commit.getCommitDate();
+                    return commitDate != null && 
+                           !commitDate.isBefore(startDateTime) && 
+                           !commitDate.isAfter(endDateTime);
+                })
                 .collect(Collectors.groupingBy(c -> c.getAuthorEmail()))
                 .entrySet()
                 .stream()
@@ -307,8 +307,12 @@ public class StatisticsService {
     }
 
     public List<CommitTrendDTO> getCommitTrends(LocalDate startDate, LocalDate endDate) {
-        LocalDate start = startDate != null ? startDate : LocalDate.now().minusMonths(1);
-        LocalDate end = endDate != null ? endDate : LocalDate.now();
-        return getCommitTrend(start, end);
+        if (startDate == null) {
+            startDate = LocalDate.now().minusDays(30);
+        }
+        if (endDate == null) {
+            endDate = LocalDate.now();
+        }
+        return getCommitTrend(startDate, endDate);
     }
 }

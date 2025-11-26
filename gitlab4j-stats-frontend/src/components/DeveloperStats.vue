@@ -50,10 +50,20 @@ const loading = ref(false)
 const fetchData = async () => {
   loading.value = true
   try {
+    console.log('Fetching developer stats from API...')
     const response = await statisticsApi.getDeveloperStats(20, 'totalLinesChanged')
+    console.log('Developer stats response:', response.data)
     developerStats.value = response.data
   } catch (error) {
     console.error('Error fetching developer stats:', error)
+    if (error.response) {
+      console.error('Response error:', {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data,
+        url: error.config?.url
+      })
+    }
   } finally {
     loading.value = false
   }

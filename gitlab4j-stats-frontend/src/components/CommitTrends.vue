@@ -116,15 +116,18 @@ const initChart = () => {
 const fetchData = async () => {
   loading.value = true
   try {
+    console.log('Fetching commit trends from API...')
     const startDate = dateRange.value?.[0]?.toISOString().split('T')[0]
     const endDate = dateRange.value?.[1]?.toISOString().split('T')[0]
     
+    console.log('Date range:', { startDate, endDate })
     const response = await statisticsApi.getCommitTrends(startDate, endDate)
+    console.log('Commit trends response:', response.data)
     const trends = response.data
     
     if (chart) {
       const dates = trends.map(t => t.date)
-      const commits = trends.map(t => t.commitCount)
+      const commits = trends.map(t => t.commitsCount)
       const linesAdded = trends.map(t => t.linesAdded)
       const linesDeleted = trends.map(t => t.linesDeleted)
       const linesChanged = trends.map(t => t.linesChanged)
@@ -143,6 +146,14 @@ const fetchData = async () => {
     }
   } catch (error) {
     console.error('Error fetching commit trends:', error)
+    if (error.response) {
+      console.error('Response error:', {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data,
+        url: error.config?.url
+      })
+    }
   } finally {
     loading.value = false
   }

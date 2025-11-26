@@ -8,7 +8,7 @@ import type {
   CommitTrend 
 } from '@/types'
 
-const API_BASE_URL = 'http://localhost:8081/api/statistics'
+const API_BASE_URL = 'http://localhost:8081/api/stats'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -60,7 +60,7 @@ export const statisticsApi = {
 
   // Commit trends
   getCommitTrends(startDate?: string, endDate?: string) {
-    return api.get<CommitTrend[]>('/commit-trends', {
+    return api.get<CommitTrend[]>('/trends', {
       params: { startDate, endDate }
     })
   },
