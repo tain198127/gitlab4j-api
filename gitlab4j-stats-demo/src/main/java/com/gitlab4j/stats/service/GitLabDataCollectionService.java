@@ -9,6 +9,7 @@ import org.gitlab4j.api.GitLabApi;
 import org.gitlab4j.api.models.Commit;
 import org.gitlab4j.api.models.Diff;
 import org.gitlab4j.api.models.Project;
+import org.gitlab4j.api.models.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,8 +61,43 @@ public class GitLabDataCollectionService {
             }
             
             logger.info("Starting GitLab data collection for project ID: {}", projectId);
+            
+            // Debug logging
+            if (projectId == null) {
+                logger.error("Project ID is null!");
+                return;
+            }
+            logger.debug("Using project ID: {}", projectId);
 
-            Project project = gitLabApi.getProjectApi().getProject(projectId);
+            // Use project ID as Integer to match GitLab4J API expectations
+            Integer projectIdInt = projectId.intValue();
+            logger.debug("Attempting to get project with ID: {} (type: {})", projectIdInt, projectIdInt.getClass().getSimpleName());
+            
+            // Test GitLab API connection by getting current user
+            try {
+                logger.info("Testing GitLab API connection...");
+                User currentUser = gitLabApi.getUserApi().getCurrentUser();
+                logger.info("GitLab API connection successful. Current user: {}", currentUser.getUsername());
+            } catch (Exception e) {
+                logger.error("GitLab API authentication failed: {}", e.getMessage());
+                logger.warn("Continuing with data collection anyway. If the project is public, this might still work.");
+                // Don't throw exception, continue with project retrieval which might work for public projects
+            }
+            
+            Project project;
+            try {
+                project = gitLabApi.getProjectApi().getProject(projectIdInt);
+                logger.info("Successfully retrieved project: {} (ID: {})", project.getName(), project.getId());
+            } catch (Exception e) {
+                logger.error("Failed to retrieve project with ID: {}. Error: {}", projectIdInt, e.getMessage());
+                logger.error("This could mean:\n" +
+                            "1. The project ID is incorrect\n" +
+                            "2. The project is private and your token doesn't have access\n" +
+                            "3. Your GitLab API token is invalid or expired\n" +
+                            "4. The GitLab API URL is incorrect\n" +
+                            "Please check your configuration in application.properties");
+                return;
+            }
             logger.info("Found project: {} ({})", project.getName(), project.getId());
 
             updateProjectStats(project);
@@ -119,7 +155,9 @@ public class GitLabDataCollectionService {
 
     private void collectCommitData(Project project) {
         try {
-            List<Commit> commits = gitLabApi.getCommitsApi().getCommits(project.getId().longValue());
+            // Use project ID as Integer to match GitLab4J API expectations
+            Integer projectIdInt = project.getId().intValue();
+            List<Commit> commits = gitLabApi.getCommitsApi().getCommits(projectIdInt);
             logger.info("Found {} commits for project: {}", commits.size(), project.getName());
 
             for (Commit commit : commits) {
@@ -143,7 +181,9 @@ public class GitLabDataCollectionService {
         }
 
         try {
-            List<Diff> diffs = gitLabApi.getCommitsApi().getDiff(project.getId(), commitSha);
+            // Use project ID as Integer to match GitLab4J API expectations
+            Integer projectIdInt = project.getId().intValue();
+            List<Diff> diffs = gitLabApi.getCommitsApi().getDiff(projectIdInt, commitSha);
 
             int linesAdded = 0;
             int linesDeleted = 0;
@@ -241,12 +281,22 @@ public class GitLabDataCollectionService {
     public void collectProjectData(Long projectId) {
         try {
             logger.info("Starting GitLab data collection for project ID: {}", projectId);
+            
+            // Debug logging
+            if (projectId == null) {
+                logger.error("Project ID is null!");
+                return;
+            }
+            logger.debug("Using project ID: {}", projectId);
 
-            Project project = gitLabApi.getProjectApi().getProject(projectId);
+            // Use project ID as Integer to match GitLab4J API expectations
+            Integer projectIdInt = projectId.intValue();
+            Project project = gitLabApi.getProjectApi().getProject(projectIdInt);
             logger.info("Found project: {} ({})", project.getName(), project.getId());
 
-            updateProjectStats(project);
+            // Collect commits first, then update project stats
             collectCommitData(project);
+            updateProjectStats(project);
 
             logger.info("GitLab data collection completed successfully for project: {}", projectId);
         } catch (Exception e) {
