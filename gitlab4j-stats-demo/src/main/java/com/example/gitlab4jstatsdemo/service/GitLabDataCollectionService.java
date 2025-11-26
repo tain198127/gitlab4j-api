@@ -53,17 +53,22 @@ public class GitLabDataCollectionService {
         this.projectStatsRepository = projectStatsRepository;
     }
 
-    public void collectCommitData() throws GitLabApiException {
+    public void collectCommitData() {
         logger.info("Starting to collect commit data for project {}", projectId);
 
-        List<Commit> commits = gitLabApi.getCommitsApi().getCommits(projectId);
-        logger.info("Found {} commits", commits.size());
+        try {
+            List<Commit> commits = gitLabApi.getCommitsApi().getCommits(projectId);
+            logger.info("Found {} commits", commits.size());
 
-        for (Commit commit : commits) {
-            processCommit(commit);
+            for (Commit commit : commits) {
+                processCommit(commit);
+            }
+
+            logger.info("Commit data collection completed");
+        } catch (GitLabApiException e) {
+            logger.error("Error collecting commit data for project {}: {}", projectId, e.toString(), e);
+            throw new RuntimeException("Failed to collect commit data: " + e.toString(), e);
         }
-
-        logger.info("Commit data collection completed");
     }
 
     private void processCommit(Commit commit) throws GitLabApiException {

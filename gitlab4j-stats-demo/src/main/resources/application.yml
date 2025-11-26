@@ -15,12 +15,20 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: true
+  springdoc:
+    swagger-ui:
+      path: /swagger-ui.html
+      enabled: true
+knife4j:
+  enable: true
+  setting:
+    language: zh-CN
 
 server:
-  port: 8080
+  port: 8088
 
 gitlab:
   api:
-    url: https://gitlab.com/api/v4
-    token: ${GITLAB_API_TOKEN:your_private_token_here}
-    project-id: ${GITLAB_PROJECT_ID:0}
+    url: https://gitlab.com
+    token: ${GITLAB_API_TOKEN:glpat-G3qGLYrP4OQN1FnvDQdoVm86MQp1Oml5ejdlCw.01.121qvnji7}
+    project-id: ${GITLAB_PROJECT_ID:76375070}

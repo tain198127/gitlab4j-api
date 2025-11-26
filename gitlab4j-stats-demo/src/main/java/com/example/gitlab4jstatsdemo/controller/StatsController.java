@@ -42,7 +42,7 @@ public class StatsController {
         try {
             gitLabDataCollectionService.collectCommitData();
             return ResponseEntity.ok("Data collection completed successfully");
-        } catch (GitLabApiException e) {
+        } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body("Data collection failed: " + e.getMessage());
         }
     }

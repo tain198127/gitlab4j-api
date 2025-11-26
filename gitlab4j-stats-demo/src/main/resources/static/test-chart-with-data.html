@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chart.js Test with Data</title>
+    <script src="chart.js"></script>
+    <style>
+        canvas {
+            width: 100%;
+            height: 400px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chart.js Test with Data</h1>
+    <canvas id="testChart"></canvas>
+    <canvas id="testBarChart"></canvas>
+
+    <script>
+        console.log('Chart available:', typeof Chart !== 'undefined');
+        if (typeof Chart === 'undefined') {
+            alert('Chart.js is not loaded!');
+        }
+
+        // Test line chart
+        const lineCtx = document.getElementById('testChart').getContext('2d');
+        new Chart(lineCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+                datasets: [{
+                    label: 'Commits',
+                    data: [50, 75, 40, 60, 85],
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    fill: true
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true
+            }
+        });
+
+        // Test bar chart
+        const barCtx = document.getElementById('testBarChart').getContext('2d');
+        new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Developer 1', 'Developer 2', 'Developer 3'],
+                datasets: [{
+                    label: 'Commits',
+                    data: [120, 85, 95],
+                    backgroundColor: ['rgba(255, 99, 132, 0.7)', 'rgba(54, 162, 235, 0.7)', 'rgba(255, 206, 86, 0.7)']
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true
+            }
+        });
+
+        console.log('Charts rendered successfully!');
+    </script>
+</body>
+</html>
