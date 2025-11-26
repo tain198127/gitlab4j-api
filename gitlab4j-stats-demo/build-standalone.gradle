@@ -1,19 +1,12 @@
-// Override parent project configuration for Java 8 compatibility
-
+// Standalone build.gradle for Java 8 compatibility
 plugins {
     id 'org.springframework.boot' version '2.7.18'
     id 'io.spring.dependency-management' version '1.0.15.RELEASE'
     id 'java'
 }
 
-// Override parent project configuration
-
-
-
-
 group = 'com.gitlab4j'
 version = '1.0.0'
-// sourceCompatibility = '17'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8

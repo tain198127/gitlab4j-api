@@ -14,9 +14,15 @@ public class DeveloperStatsDTO {
 
     public DeveloperStatsDTO() {}
 
-    public DeveloperStatsDTO(String developerName, String developerEmail, Integer totalCommits, 
-                             Integer totalLinesAdded, Integer totalLinesDeleted, Integer totalLinesChanged,
-                             LocalDateTime firstCommitDate, LocalDateTime lastCommitDate) {
+    public DeveloperStatsDTO(
+            String developerName,
+            String developerEmail,
+            Integer totalCommits,
+            Integer totalLinesAdded,
+            Integer totalLinesDeleted,
+            Integer totalLinesChanged,
+            LocalDateTime firstCommitDate,
+            LocalDateTime lastCommitDate) {
         this.developerName = developerName;
         this.developerEmail = developerEmail;
         this.totalCommits = totalCommits;

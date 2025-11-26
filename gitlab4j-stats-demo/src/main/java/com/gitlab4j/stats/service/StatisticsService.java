@@ -1,20 +1,22 @@
 package com.gitlab4j.stats.service;
 
-import com.gitlab4j.stats.dto.*;
-import com.gitlab4j.stats.entity.DeveloperStats;
-import com.gitlab4j.stats.entity.DailyStats;
-import com.gitlab4j.stats.entity.ProjectStats;
-import com.gitlab4j.stats.repository.CommitDetailRepository;
-import com.gitlab4j.stats.repository.DeveloperStatsRepository;
-import com.gitlab4j.stats.repository.DailyStatsRepository;
-import com.gitlab4j.stats.repository.ProjectStatsRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.gitlab4j.stats.dto.*;
+import com.gitlab4j.stats.entity.CommitDetail;
+import com.gitlab4j.stats.entity.DailyStats;
+import com.gitlab4j.stats.entity.DeveloperStats;
+import com.gitlab4j.stats.entity.ProjectStats;
+import com.gitlab4j.stats.repository.CommitDetailRepository;
+import com.gitlab4j.stats.repository.DailyStatsRepository;
+import com.gitlab4j.stats.repository.DeveloperStatsRepository;
+import com.gitlab4j.stats.repository.ProjectStatsRepository;
 
 @Service
 public class StatisticsService {
@@ -32,13 +34,13 @@ public class StatisticsService {
     private CommitDetailRepository commitDetailRepository;
 
     public DeveloperStatsDTO getDeveloperStats(String developerEmail) {
-        DeveloperStats stats = developerStatsRepository.findByDeveloperEmail(developerEmail)
-                .orElse(null);
-        
+        DeveloperStats stats =
+                developerStatsRepository.findByDeveloperEmail(developerEmail).orElse(null);
+
         if (stats == null) {
             return null;
         }
-        
+
         return new DeveloperStatsDTO(
                 stats.getDeveloperName(),
                 stats.getDeveloperEmail(),
@@ -47,8 +49,7 @@ public class StatisticsService {
                 stats.getTotalLinesDeleted(),
                 stats.getTotalLinesChanged(),
                 stats.getFirstCommitDate(),
-                stats.getLastCommitDate()
-        );
+                stats.getLastCommitDate());
     }
 
     public List<DeveloperStatsDTO> getAllDeveloperStats() {
@@ -61,8 +62,7 @@ public class StatisticsService {
                         stats.getTotalLinesDeleted(),
                         stats.getTotalLinesChanged(),
                         stats.getFirstCommitDate(),
-                        stats.getLastCommitDate()
-                ))
+                        stats.getLastCommitDate()))
                 .collect(Collectors.toList());
     }
 
@@ -77,8 +77,7 @@ public class StatisticsService {
                         stats.getTotalLinesDeleted(),
                         stats.getTotalLinesChanged(),
                         stats.getFirstCommitDate(),
-                        stats.getLastCommitDate()
-                ))
+                        stats.getLastCommitDate()))
                 .collect(Collectors.toList());
     }
 
@@ -93,8 +92,7 @@ public class StatisticsService {
                         stats.getTotalLinesDeleted(),
                         stats.getTotalLinesChanged(),
                         stats.getFirstCommitDate(),
-                        stats.getLastCommitDate()
-                ))
+                        stats.getLastCommitDate()))
                 .collect(Collectors.toList());
     }
 
@@ -107,8 +105,7 @@ public class StatisticsService {
                         stats.getCommitsCount(),
                         stats.getLinesAdded(),
                         stats.getLinesDeleted(),
-                        stats.getLinesChanged()
-                ))
+                        stats.getLinesChanged()))
                 .collect(Collectors.toList());
     }
 
@@ -121,13 +118,14 @@ public class StatisticsService {
                         stats.getCommitsCount(),
                         stats.getLinesAdded(),
                         stats.getLinesDeleted(),
-                        stats.getLinesChanged()
-                ))
+                        stats.getLinesChanged()))
                 .collect(Collectors.toList());
     }
 
     public List<DailyStatsDTO> getDailyStatsByDateRange(LocalDate startDate, LocalDate endDate) {
-        return dailyStatsRepository.findByStatDateBetweenOrderByStatDateDescLinesChangedDesc(startDate, endDate).stream()
+        return dailyStatsRepository
+                .findByStatDateBetweenOrderByStatDateDescLinesChangedDesc(startDate, endDate)
+                .stream()
                 .map(stats -> new DailyStatsDTO(
                         stats.getStatDate(),
                         stats.getDeveloperName(),
@@ -135,76 +133,182 @@ public class StatisticsService {
                         stats.getCommitsCount(),
                         stats.getLinesAdded(),
                         stats.getLinesDeleted(),
-                        stats.getLinesChanged()
-                ))
+                        stats.getLinesChanged()))
                 .collect(Collectors.toList());
     }
 
     public ProjectStatsDTO getProjectStats(Long projectId) {
-        ProjectStats stats = projectStatsRepository.findByProjectId(projectId)
-                .orElse(null);
-        
+        ProjectStats stats = projectStatsRepository.findByProjectId(projectId).orElse(null);
+
         if (stats == null) {
             return null;
         }
-        
+
         return new ProjectStatsDTO(
-                stats.getProjectId(),
+                stats.getProjectId() != null ? stats.getProjectId().intValue() : null,
                 stats.getProjectName(),
                 stats.getTotalCommits(),
                 stats.getTotalLinesAdded(),
                 stats.getTotalLinesDeleted(),
                 stats.getTotalLinesChanged(),
-                stats.getTotalDevelopers(),
-                stats.getFirstCommitDate(),
-                stats.getLastCommitDate()
-        );
+                stats.getTotalDevelopers());
     }
 
     public SummaryStatsDTO getSummaryStats() {
         Integer totalLinesChanged = developerStatsRepository.getTotalLinesChanged();
         Integer totalCommits = developerStatsRepository.getTotalCommits();
+        Integer totalLinesAdded = developerStatsRepository.findAll().stream()
+                .mapToInt(s -> s.getTotalLinesAdded() != null ? s.getTotalLinesAdded() : 0)
+                .sum();
+        Integer totalLinesDeleted = developerStatsRepository.findAll().stream()
+                .mapToInt(s -> s.getTotalLinesDeleted() != null ? s.getTotalLinesDeleted() : 0)
+                .sum();
         Integer totalDevelopers = developerStatsRepository.findAll().size();
         Integer totalProjects = projectStatsRepository.findAll().size();
-        
+
         return new SummaryStatsDTO(
-                totalLinesChanged != null ? totalLinesChanged : 0,
-                totalCommits != null ? totalCommits : 0,
                 totalDevelopers,
-                totalProjects
-        );
+                totalCommits != null ? totalCommits : 0,
+                totalLinesAdded,
+                totalLinesDeleted,
+                totalLinesChanged != null ? totalLinesChanged : 0,
+                totalProjects);
     }
 
-    public List<DeveloperActivityDTO> getDeveloperActivity(String developerEmail, LocalDateTime startDate, LocalDateTime endDate) {
-        return commitDetailRepository.findByAuthorEmailAndCommitDateBetweenOrderByCommitDateDesc(
-                developerEmail, startDate, endDate).stream()
-                .map(commit -> new DeveloperActivityDTO(
-                        commit.getCommitSha(),
-                        commit.getCommitDate(),
-                        commit.getMessage(),
-                        commit.getLinesAdded(),
-                        commit.getLinesDeleted(),
-                        commit.getLinesChanged(),
-                        commit.getFilesChanged()
-                ))
+    public List<DeveloperActivityDTO> getDeveloperActivity(
+            String developerEmail, LocalDateTime startDate, LocalDateTime endDate) {
+        return commitDetailRepository
+                .findByAuthorEmailAndCommitDateBetweenOrderByCommitDateDesc(developerEmail, startDate, endDate)
+                .stream()
+                .collect(Collectors.groupingBy(c -> c.getAuthorEmail()))
+                .entrySet()
+                .stream()
+                .map(entry -> {
+                    List<CommitDetail> commits = entry.getValue();
+                    int totalCommits = commits.size();
+                    int totalLinesChanged = commits.stream()
+                            .mapToInt(c -> c.getLinesChanged() != null ? c.getLinesChanged() : 0)
+                            .sum();
+                    double avgLines = totalCommits > 0 ? (double) totalLinesChanged / totalCommits : 0.0;
+
+                    CommitDetail firstCommit = commits.get(0);
+                    return new DeveloperActivityDTO(
+                            firstCommit.getAuthorName(),
+                            firstCommit.getAuthorEmail(),
+                            totalCommits,
+                            totalLinesChanged,
+                            avgLines);
+                })
                 .collect(Collectors.toList());
     }
 
     public List<CommitTrendDTO> getCommitTrend(LocalDate startDate, LocalDate endDate) {
-        return dailyStatsRepository.findByStatDateBetweenOrderByStatDateDescLinesChangedDesc(startDate, endDate).stream()
+        return dailyStatsRepository
+                .findByStatDateBetweenOrderByStatDateDescLinesChangedDesc(startDate, endDate)
+                .stream()
                 .collect(Collectors.groupingBy(DailyStats::getStatDate))
-                .entrySet().stream()
+                .entrySet()
+                .stream()
                 .map(entry -> {
                     LocalDate date = entry.getKey();
                     List<DailyStats> dailyStats = entry.getValue();
-                    
-                    int totalCommits = dailyStats.stream().mapToInt(DailyStats::getCommitsCount).sum();
-                    int totalLinesChanged = dailyStats.stream().mapToInt(DailyStats::getLinesChanged).sum();
-                    int totalDevelopers = dailyStats.size();
-                    
-                    return new CommitTrendDTO(date, totalCommits, totalLinesChanged, totalDevelopers);
+
+                    int totalCommits = dailyStats.stream()
+                            .mapToInt(DailyStats::getCommitsCount)
+                            .sum();
+                    int totalLinesAdded = dailyStats.stream()
+                            .mapToInt(DailyStats::getLinesAdded)
+                            .sum();
+                    int totalLinesDeleted = dailyStats.stream()
+                            .mapToInt(DailyStats::getLinesDeleted)
+                            .sum();
+                    int totalLinesChanged = dailyStats.stream()
+                            .mapToInt(DailyStats::getLinesChanged)
+                            .sum();
+
+                    return new CommitTrendDTO(
+                            date, totalCommits, totalLinesAdded, totalLinesDeleted, totalLinesChanged);
                 })
                 .sorted((a, b) -> a.getDate().compareTo(b.getDate()))
                 .collect(Collectors.toList());
+    }
+
+    // Additional methods needed by StatisticsController
+    public List<DeveloperStatsDTO> getDeveloperStats(int limit, String sortBy) {
+        if ("commits".equals(sortBy)) {
+            return getTopDevelopersByCommits(limit);
+        }
+        return getTopDevelopersByLinesChanged(limit);
+    }
+
+    public DeveloperStatsDTO getDeveloperStatsByEmail(String email) {
+        return getDeveloperStats(email);
+    }
+
+    public List<DailyStatsDTO> getDailyStats(LocalDate startDate, LocalDate endDate, String developerEmail) {
+        if (developerEmail != null && !developerEmail.isEmpty()) {
+            return getDailyStatsByDeveloper(developerEmail);
+        }
+        if (startDate != null && endDate != null) {
+            return getDailyStatsByDateRange(startDate, endDate);
+        }
+        if (startDate != null) {
+            return getDailyStats(startDate);
+        }
+        return getAllDeveloperStats().stream()
+                .flatMap(dev -> getDailyStatsByDeveloper(dev.getDeveloperEmail()).stream())
+                .collect(Collectors.toList());
+    }
+
+    public List<ProjectStatsDTO> getProjectStats() {
+        return projectStatsRepository.findAll().stream()
+                .map(stats -> new ProjectStatsDTO(
+                        stats.getProjectId() != null ? stats.getProjectId().intValue() : null,
+                        stats.getProjectName(),
+                        stats.getTotalCommits(),
+                        stats.getTotalLinesAdded(),
+                        stats.getTotalLinesDeleted(),
+                        stats.getTotalLinesChanged(),
+                        stats.getTotalDevelopers()))
+                .collect(Collectors.toList());
+    }
+
+    public ProjectStatsDTO getProjectStatsById(Integer projectId) {
+        return getProjectStats(projectId != null ? projectId.longValue() : null);
+    }
+
+    public List<DeveloperActivityDTO> getDeveloperActivity(LocalDate startDate, LocalDate endDate) {
+        LocalDateTime start = startDate != null
+                ? startDate.atStartOfDay()
+                : LocalDateTime.now().minusMonths(1);
+        LocalDateTime end = endDate != null ? endDate.atTime(23, 59, 59) : LocalDateTime.now();
+
+        return commitDetailRepository.findByCommitDateBetweenOrderByCommitDateDesc(start, end).stream()
+                .collect(Collectors.groupingBy(c -> c.getAuthorEmail()))
+                .entrySet()
+                .stream()
+                .map(entry -> {
+                    List<CommitDetail> commits = entry.getValue();
+                    int totalCommits = commits.size();
+                    int totalLinesChanged = commits.stream()
+                            .mapToInt(c -> c.getLinesChanged() != null ? c.getLinesChanged() : 0)
+                            .sum();
+                    double avgLines = totalCommits > 0 ? (double) totalLinesChanged / totalCommits : 0.0;
+
+                    CommitDetail firstCommit = commits.get(0);
+                    return new DeveloperActivityDTO(
+                            firstCommit.getAuthorName(),
+                            firstCommit.getAuthorEmail(),
+                            totalCommits,
+                            totalLinesChanged,
+                            avgLines);
+                })
+                .collect(Collectors.toList());
+    }
+
+    public List<CommitTrendDTO> getCommitTrends(LocalDate startDate, LocalDate endDate) {
+        LocalDate start = startDate != null ? startDate : LocalDate.now().minusMonths(1);
+        LocalDate end = endDate != null ? endDate : LocalDate.now();
+        return getCommitTrend(start, end);
     }
 }

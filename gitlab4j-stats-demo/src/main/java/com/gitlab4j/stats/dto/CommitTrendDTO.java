@@ -11,8 +11,8 @@ public class CommitTrendDTO {
 
     public CommitTrendDTO() {}
 
-    public CommitTrendDTO(LocalDate date, Integer commitsCount, Integer linesAdded, 
-                         Integer linesDeleted, Integer linesChanged) {
+    public CommitTrendDTO(
+            LocalDate date, Integer commitsCount, Integer linesAdded, Integer linesDeleted, Integer linesChanged) {
         this.date = date;
         this.commitsCount = commitsCount;
         this.linesAdded = linesAdded;

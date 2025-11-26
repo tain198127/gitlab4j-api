@@ -9,8 +9,12 @@ public class DeveloperActivityDTO {
 
     public DeveloperActivityDTO() {}
 
-    public DeveloperActivityDTO(String developerName, String developerEmail, Integer commitsCount, 
-                               Integer linesChanged, Double avgLinesPerCommit) {
+    public DeveloperActivityDTO(
+            String developerName,
+            String developerEmail,
+            Integer commitsCount,
+            Integer linesChanged,
+            Double avgLinesPerCommit) {
         this.developerName = developerName;
         this.developerEmail = developerEmail;
         this.commitsCount = commitsCount;

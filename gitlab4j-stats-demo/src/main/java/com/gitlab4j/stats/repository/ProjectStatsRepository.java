@@ -1,11 +1,12 @@
 package com.gitlab4j.stats.repository;
 
-import com.gitlab4j.stats.entity.ProjectStats;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
+import com.gitlab4j.stats.entity.ProjectStats;
 
 @Repository
 public interface ProjectStatsRepository extends JpaRepository<ProjectStats, Long> {

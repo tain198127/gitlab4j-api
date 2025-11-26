@@ -1,7 +1,8 @@
 package com.gitlab4j.stats.entity;
 
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
+
+import javax.persistence.*;
 
 @Entity
 @Table(name = "commit_detail")
@@ -54,8 +55,13 @@ public class CommitDetail {
 
     public CommitDetail() {}
 
-    public CommitDetail(String commitSha, Long projectId, String projectName, 
-                       String authorName, String authorEmail, LocalDateTime commitDate) {
+    public CommitDetail(
+            String commitSha,
+            Long projectId,
+            String projectName,
+            String authorName,
+            String authorEmail,
+            LocalDateTime commitDate) {
         this.commitSha = commitSha;
         this.projectId = projectId;
         this.projectName = projectName;

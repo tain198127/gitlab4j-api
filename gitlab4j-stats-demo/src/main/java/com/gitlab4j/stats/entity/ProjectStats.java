@@ -1,7 +1,8 @@
 package com.gitlab4j.stats.entity;
 
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
+
+import javax.persistence.*;
 
 @Entity
 @Table(name = "project_stats")

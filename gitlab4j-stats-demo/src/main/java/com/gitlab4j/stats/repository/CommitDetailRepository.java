@@ -1,6 +1,9 @@
 package com.gitlab4j.stats.repository;
 
-import com.gitlab4j.stats.entity.CommitDetail;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,9 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import com.gitlab4j.stats.entity.CommitDetail;
 
 @Repository
 public interface CommitDetailRepository extends JpaRepository<CommitDetail, Long> {
@@ -25,16 +26,17 @@ public interface CommitDetailRepository extends JpaRepository<CommitDetail, Long
 
     @Query("SELECT c FROM CommitDetail c WHERE c.commitDate BETWEEN :startDate AND :endDate ORDER BY c.commitDate DESC")
     List<CommitDetail> findByCommitDateBetweenOrderByCommitDateDesc(
-            @Param("startDate") LocalDateTime startDate, 
-            @Param("endDate") LocalDateTime endDate);
+            @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 
-    @Query("SELECT c FROM CommitDetail c WHERE c.authorEmail = :email AND c.commitDate BETWEEN :startDate AND :endDate ORDER BY c.commitDate DESC")
+    @Query(
+            "SELECT c FROM CommitDetail c WHERE c.authorEmail = :email AND c.commitDate BETWEEN :startDate AND :endDate ORDER BY c.commitDate DESC")
     List<CommitDetail> findByAuthorEmailAndCommitDateBetweenOrderByCommitDateDesc(
             @Param("email") String authorEmail,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
 
-    @Query("SELECT c FROM CommitDetail c WHERE c.projectId = :projectId AND c.commitDate BETWEEN :startDate AND :endDate ORDER BY c.commitDate DESC")
+    @Query(
+            "SELECT c FROM CommitDetail c WHERE c.projectId = :projectId AND c.commitDate BETWEEN :startDate AND :endDate ORDER BY c.commitDate DESC")
     List<CommitDetail> findByProjectIdAndCommitDateBetweenOrderByCommitDateDesc(
             @Param("projectId") Long projectId,
             @Param("startDate") LocalDateTime startDate,

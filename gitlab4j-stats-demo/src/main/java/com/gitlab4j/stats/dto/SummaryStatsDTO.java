@@ -10,8 +10,13 @@ public class SummaryStatsDTO {
 
     public SummaryStatsDTO() {}
 
-    public SummaryStatsDTO(Integer totalDevelopers, Integer totalCommits, Integer totalLinesAdded, 
-                          Integer totalLinesDeleted, Integer totalLinesChanged, Integer totalProjects) {
+    public SummaryStatsDTO(
+            Integer totalDevelopers,
+            Integer totalCommits,
+            Integer totalLinesAdded,
+            Integer totalLinesDeleted,
+            Integer totalLinesChanged,
+            Integer totalProjects) {
         this.totalDevelopers = totalDevelopers;
         this.totalCommits = totalCommits;
         this.totalLinesAdded = totalLinesAdded;

@@ -11,9 +11,14 @@ public class ProjectStatsDTO {
 
     public ProjectStatsDTO() {}
 
-    public ProjectStatsDTO(Integer projectId, String projectName, Integer totalCommits, 
-                          Integer totalLinesAdded, Integer totalLinesDeleted, Integer totalLinesChanged, 
-                          Integer developerCount) {
+    public ProjectStatsDTO(
+            Integer projectId,
+            String projectName,
+            Integer totalCommits,
+            Integer totalLinesAdded,
+            Integer totalLinesDeleted,
+            Integer totalLinesChanged,
+            Integer developerCount) {
         this.projectId = projectId;
         this.projectName = projectName;
         this.totalCommits = totalCommits;

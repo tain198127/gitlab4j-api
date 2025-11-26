@@ -1,9 +1,13 @@
 package com.gitlab4j.stats.service;
 
-import com.gitlab4j.stats.dto.DeveloperStatsDTO;
-import com.gitlab4j.stats.dto.SummaryStatsDTO;
-import com.gitlab4j.stats.entity.DeveloperStats;
-import com.gitlab4j.stats.repository.DeveloperStatsRepository;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,13 +15,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import com.gitlab4j.stats.dto.DeveloperStatsDTO;
+import com.gitlab4j.stats.dto.SummaryStatsDTO;
+import com.gitlab4j.stats.entity.DeveloperStats;
+import com.gitlab4j.stats.repository.DeveloperStatsRepository;
 
 @ExtendWith(MockitoExtension.class)
 class StatisticsServiceTest {

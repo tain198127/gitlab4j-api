@@ -1,13 +1,14 @@
 package com.gitlab4j.stats.service;
 
-import com.gitlab4j.stats.entity.CommitDetail;
-import com.gitlab4j.stats.entity.DeveloperStats;
-import com.gitlab4j.stats.entity.DailyStats;
-import com.gitlab4j.stats.entity.ProjectStats;
-import com.gitlab4j.stats.repository.CommitDetailRepository;
-import com.gitlab4j.stats.repository.DeveloperStatsRepository;
-import com.gitlab4j.stats.repository.DailyStatsRepository;
-import com.gitlab4j.stats.repository.ProjectStatsRepository;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Date;
+
 import org.gitlab4j.api.CommitsApi;
 import org.gitlab4j.api.GitLabApi;
 import org.gitlab4j.api.models.Commit;
@@ -19,16 +20,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import com.gitlab4j.stats.entity.CommitDetail;
+import com.gitlab4j.stats.entity.DailyStats;
+import com.gitlab4j.stats.entity.DeveloperStats;
+import com.gitlab4j.stats.repository.CommitDetailRepository;
+import com.gitlab4j.stats.repository.DailyStatsRepository;
+import com.gitlab4j.stats.repository.DeveloperStatsRepository;
+import com.gitlab4j.stats.repository.ProjectStatsRepository;
 
 @ExtendWith(MockitoExtension.class)
 class GitLabDataCollectionServiceTest {
@@ -83,7 +81,7 @@ class GitLabDataCollectionServiceTest {
         when(gitLabApi.getCommitsApi()).thenReturn(commitsApi);
         when(commitsApi.getCommits(anyInt())).thenReturn(Arrays.asList(testCommit));
         when(commitsApi.getDiff(anyInt(), anyString())).thenReturn(Arrays.asList(testDiff));
-        
+
         DeveloperStats existingDeveloperStats = new DeveloperStats();
         existingDeveloperStats.setId(1L);
         existingDeveloperStats.setDeveloperName("John Doe");
@@ -95,8 +93,7 @@ class GitLabDataCollectionServiceTest {
         existingDeveloperStats.setFirstCommitDate(LocalDateTime.now().minusDays(10));
         existingDeveloperStats.setLastCommitDate(LocalDateTime.now().minusDays(1));
 
-        when(developerStatsRepository.findByDeveloperEmail(anyString()))
-            .thenReturn(existingDeveloperStats);
+        when(developerStatsRepository.findByDeveloperEmail(anyString())).thenReturn(existingDeveloperStats);
         when(projectStatsRepository.findByProjectId(anyInt())).thenReturn(null);
 
         // When
@@ -113,13 +110,8 @@ class GitLabDataCollectionServiceTest {
     @Test
     void parseDiffLines_ShouldCalculateCorrectly() {
         // Given
-        String diffContent = "@@ -1,5 +1,7 @@\n" +
-                           " line1\n" +
-                           "+line2\n" +
-                           " line3\n" +
-                           "-line4\n" +
-                           "+line5\n" +
-                           " line6";
+        String diffContent =
+                "@@ -1,5 +1,7 @@\n" + " line1\n" + "+line2\n" + " line3\n" + "-line4\n" + "+line5\n" + " line6";
 
         // When
         int[] result = dataCollectionService.parseDiffLines(diffContent);
@@ -162,7 +154,7 @@ class GitLabDataCollectionServiceTest {
     void updateDailyStats_ShouldCreateNewDailyStats() {
         // Given
         when(dailyStatsRepository.findByStatDateAndDeveloperEmail(any(), anyString()))
-            .thenReturn(null);
+                .thenReturn(null);
 
         LocalDate commitDate = LocalDate.now();
 

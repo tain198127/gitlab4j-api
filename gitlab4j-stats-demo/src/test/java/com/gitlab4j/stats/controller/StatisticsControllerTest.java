@@ -1,10 +1,14 @@
 package com.gitlab4j.stats.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gitlab4j.stats.dto.DeveloperStatsDTO;
-import com.gitlab4j.stats.dto.SummaryStatsDTO;
-import com.gitlab4j.stats.service.GitLabDataCollectionService;
-import com.gitlab4j.stats.service.StatisticsService;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,14 +17,11 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
-
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gitlab4j.stats.dto.DeveloperStatsDTO;
+import com.gitlab4j.stats.dto.SummaryStatsDTO;
+import com.gitlab4j.stats.service.GitLabDataCollectionService;
+import com.gitlab4j.stats.service.StatisticsService;
 
 @WebMvcTest(StatisticsController.class)
 class StatisticsControllerTest {
@@ -69,9 +70,9 @@ class StatisticsControllerTest {
 
         // When & Then
         mockMvc.perform(get("/api/stats/developers")
-                .param("limit", "10")
-                .param("sortBy", "linesChanged")
-                .contentType(MediaType.APPLICATION_JSON))
+                        .param("limit", "10")
+                        .param("sortBy", "linesChanged")
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].developerName").value("John Doe"))
                 .andExpect(jsonPath("$[0].developerEmail").value("john@example.com"))
@@ -87,8 +88,7 @@ class StatisticsControllerTest {
         when(statisticsService.getDeveloperStatsByEmail(anyString())).thenReturn(testDeveloperStatsDTO);
 
         // When & Then
-        mockMvc.perform(get("/api/stats/developers/john@example.com")
-                .contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get("/api/stats/developers/john@example.com").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.developerName").value("John Doe"))
                 .andExpect(jsonPath("$.developerEmail").value("john@example.com"))
@@ -104,8 +104,7 @@ class StatisticsControllerTest {
         when(statisticsService.getSummaryStats()).thenReturn(testSummaryStatsDTO);
 
         // When & Then
-        mockMvc.perform(get("/api/stats/summary")
-                .contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get("/api/stats/summary").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalDevelopers").value(5))
                 .andExpect(jsonPath("$.totalCommits").value(100))
@@ -123,8 +122,7 @@ class StatisticsControllerTest {
         doNothing().when(dataCollectionService).collectGitLabData();
 
         // When & Then
-        mockMvc.perform(post("/api/stats/collect")
-                .contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(post("/api/stats/collect").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Data collection completed successfully"));
 
@@ -137,8 +135,7 @@ class StatisticsControllerTest {
         doNothing().when(dataCollectionService).collectProjectData(anyInt());
 
         // When & Then
-        mockMvc.perform(post("/api/stats/collect/project/1")
-                .contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(post("/api/stats/collect/project/1").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Project data collection completed successfully"));
 

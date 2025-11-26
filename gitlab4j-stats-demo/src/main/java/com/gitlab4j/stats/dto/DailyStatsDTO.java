@@ -13,8 +13,14 @@ public class DailyStatsDTO {
 
     public DailyStatsDTO() {}
 
-    public DailyStatsDTO(LocalDate statDate, String developerName, String developerEmail, 
-                        Integer commitsCount, Integer linesAdded, Integer linesDeleted, Integer linesChanged) {
+    public DailyStatsDTO(
+            LocalDate statDate,
+            String developerName,
+            String developerEmail,
+            Integer commitsCount,
+            Integer linesAdded,
+            Integer linesDeleted,
+            Integer linesChanged) {
         this.statDate = statDate;
         this.developerName = developerName;
         this.developerEmail = developerEmail;

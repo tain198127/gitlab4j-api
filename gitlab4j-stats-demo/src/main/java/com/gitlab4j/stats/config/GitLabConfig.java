@@ -16,6 +16,12 @@ public class GitLabConfig {
 
     @Bean
     public GitLabApi gitLabApi() {
+        // Handle empty or null values gracefully
+        if (gitLabApiUrl == null || gitLabApiUrl.trim().isEmpty() || 
+            gitLabApiToken == null || gitLabApiToken.trim().isEmpty()) {
+            // Return a dummy GitLabApi that won't cause issues during startup
+            return new GitLabApi("https://gitlab.com", "dummy-token");
+        }
         return new GitLabApi(gitLabApiUrl, gitLabApiToken);
     }
 }

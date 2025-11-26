@@ -1,15 +1,16 @@
 package com.gitlab4j.stats.controller;
 
-import com.gitlab4j.stats.dto.*;
-import com.gitlab4j.stats.service.GitLabDataCollectionService;
-import com.gitlab4j.stats.service.StatisticsService;
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.util.List;
+import com.gitlab4j.stats.dto.*;
+import com.gitlab4j.stats.service.GitLabDataCollectionService;
+import com.gitlab4j.stats.service.StatisticsService;
 
 @RestController
 @RequestMapping("/api/stats")
@@ -24,8 +25,7 @@ public class StatisticsController {
 
     @GetMapping("/developers")
     public ResponseEntity<List<DeveloperStatsDTO>> getDeveloperStats(
-            @RequestParam(defaultValue = "10") int limit,
-            @RequestParam(defaultValue = "linesChanged") String sortBy) {
+            @RequestParam(defaultValue = "10") int limit, @RequestParam(defaultValue = "linesChanged") String sortBy) {
         List<DeveloperStatsDTO> stats = statisticsService.getDeveloperStats(limit, sortBy);
         return ResponseEntity.ok(stats);
     }
@@ -92,7 +92,7 @@ public class StatisticsController {
     @PostMapping("/collect/project/{projectId}")
     public ResponseEntity<String> collectProjectData(@PathVariable Integer projectId) {
         try {
-            dataCollectionService.collectProjectData(projectId);
+            dataCollectionService.collectProjectData(projectId.longValue());
             return ResponseEntity.ok("Project data collection completed successfully");
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Error collecting project data: " + e.getMessage());

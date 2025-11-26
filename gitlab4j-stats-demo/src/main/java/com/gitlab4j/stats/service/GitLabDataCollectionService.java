@@ -1,13 +1,10 @@
 package com.gitlab4j.stats.service;
 
-import com.gitlab4j.stats.entity.CommitDetail;
-import com.gitlab4j.stats.entity.DeveloperStats;
-import com.gitlab4j.stats.entity.DailyStats;
-import com.gitlab4j.stats.entity.ProjectStats;
-import com.gitlab4j.stats.repository.CommitDetailRepository;
-import com.gitlab4j.stats.repository.DeveloperStatsRepository;
-import com.gitlab4j.stats.repository.DailyStatsRepository;
-import com.gitlab4j.stats.repository.ProjectStatsRepository;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
 import org.gitlab4j.api.GitLabApi;
 import org.gitlab4j.api.models.Commit;
 import org.gitlab4j.api.models.Diff;
@@ -20,11 +17,14 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Optional;
+import com.gitlab4j.stats.entity.CommitDetail;
+import com.gitlab4j.stats.entity.DailyStats;
+import com.gitlab4j.stats.entity.DeveloperStats;
+import com.gitlab4j.stats.entity.ProjectStats;
+import com.gitlab4j.stats.repository.CommitDetailRepository;
+import com.gitlab4j.stats.repository.DailyStatsRepository;
+import com.gitlab4j.stats.repository.DeveloperStatsRepository;
+import com.gitlab4j.stats.repository.ProjectStatsRepository;
 
 @Service
 public class GitLabDataCollectionService {
@@ -53,14 +53,20 @@ public class GitLabDataCollectionService {
     @Transactional
     public void collectGitLabData() {
         try {
-            logger.info("Starting GitLab data collection for project ID: {}", projectId);
+            // Skip data collection if project ID is not configured
+            if (projectId == null || projectId <= 0) {
+                logger.warn("GitLab project ID is not configured. Skipping data collection.");
+                return;
+            }
             
+            logger.info("Starting GitLab data collection for project ID: {}", projectId);
+
             Project project = gitLabApi.getProjectApi().getProject(projectId);
             logger.info("Found project: {} ({})", project.getName(), project.getId());
-            
+
             updateProjectStats(project);
             collectCommitData(project);
-            
+
             logger.info("GitLab data collection completed successfully");
         } catch (Exception e) {
             logger.error("Error collecting GitLab data", e);
@@ -68,38 +74,37 @@ public class GitLabDataCollectionService {
     }
 
     private void updateProjectStats(Project project) {
-        Optional<ProjectStats> existingStats = projectStatsRepository.findByProjectId(project.getId());
-        ProjectStats stats = existingStats.orElse(new ProjectStats(project.getId(), project.getName()));
-        
-        stats.setTotalCommits(commitDetailRepository.findByProjectIdOrderByCommitDateDesc(project.getId()).size());
-        stats.setTotalLinesChanged(commitDetailRepository.findByProjectIdOrderByCommitDateDesc(project.getId())
-                .stream()
+        Optional<ProjectStats> existingStats = projectStatsRepository.findByProjectId(project.getId().longValue());
+        ProjectStats stats = existingStats.orElse(new ProjectStats(project.getId().longValue(), project.getName()));
+
+        stats.setTotalCommits(commitDetailRepository.findByProjectIdOrderByCommitDateDesc(project.getId().longValue()).size());
+        stats.setTotalLinesChanged(commitDetailRepository.findByProjectIdOrderByCommitDateDesc(project.getId().longValue()).stream()
                 .mapToInt(CommitDetail::getLinesChanged)
                 .sum());
-        stats.setTotalLinesAdded(commitDetailRepository.findByProjectIdOrderByCommitDateDesc(project.getId())
-                .stream()
+        stats.setTotalLinesAdded(commitDetailRepository.findByProjectIdOrderByCommitDateDesc(project.getId().longValue()).stream()
                 .mapToInt(CommitDetail::getLinesAdded)
                 .sum());
-        stats.setTotalLinesDeleted(commitDetailRepository.findByProjectIdOrderByCommitDateDesc(project.getId())
-                .stream()
+        stats.setTotalLinesDeleted(commitDetailRepository.findByProjectIdOrderByCommitDateDesc(project.getId().longValue()).stream()
                 .mapToInt(CommitDetail::getLinesDeleted)
                 .sum());
-        stats.setTotalDevelopers((int) commitDetailRepository.findByProjectIdOrderByCommitDateDesc(project.getId())
-                .stream()
-                .map(CommitDetail::getAuthorEmail)
-                .distinct()
-                .count());
-        
-        if (!commitDetailRepository.findByProjectIdOrderByCommitDateDesc(project.getId()).isEmpty()) {
-            CommitDetail firstCommit = commitDetailRepository.findByProjectIdOrderByCommitDateDesc(project.getId())
-                    .stream()
-                    .min((a, b) -> a.getCommitDate().compareTo(b.getCommitDate()))
-                    .orElse(null);
-            CommitDetail lastCommit = commitDetailRepository.findByProjectIdOrderByCommitDateDesc(project.getId())
-                    .stream()
-                    .max((a, b) -> a.getCommitDate().compareTo(b.getCommitDate()))
-                    .orElse(null);
-            
+        stats.setTotalDevelopers(
+                (int) commitDetailRepository.findByProjectIdOrderByCommitDateDesc(project.getId().longValue()).stream()
+                        .map(CommitDetail::getAuthorEmail)
+                        .distinct()
+                        .count());
+
+        if (!commitDetailRepository
+                .findByProjectIdOrderByCommitDateDesc(project.getId().longValue())
+                .isEmpty()) {
+            CommitDetail firstCommit =
+                    commitDetailRepository.findByProjectIdOrderByCommitDateDesc(project.getId().longValue()).stream()
+                            .min((a, b) -> a.getCommitDate().compareTo(b.getCommitDate()))
+                            .orElse(null);
+            CommitDetail lastCommit =
+                    commitDetailRepository.findByProjectIdOrderByCommitDateDesc(project.getId().longValue()).stream()
+                            .max((a, b) -> a.getCommitDate().compareTo(b.getCommitDate()))
+                            .orElse(null);
+
             if (firstCommit != null) {
                 stats.setFirstCommitDate(firstCommit.getCommitDate());
             }
@@ -107,16 +112,16 @@ public class GitLabDataCollectionService {
                 stats.setLastCommitDate(lastCommit.getCommitDate());
             }
         }
-        
+
         projectStatsRepository.save(stats);
         logger.info("Updated project stats for project: {}", project.getName());
     }
 
     private void collectCommitData(Project project) {
         try {
-            List<Commit> commits = gitLabApi.getCommitsApi().getCommits(project.getId());
+            List<Commit> commits = gitLabApi.getCommitsApi().getCommits(project.getId().longValue());
             logger.info("Found {} commits for project: {}", commits.size(), project.getName());
-            
+
             for (Commit commit : commits) {
                 try {
                     processCommit(project, commit);
@@ -131,19 +136,19 @@ public class GitLabDataCollectionService {
 
     private void processCommit(Project project, Commit commit) {
         String commitSha = commit.getId();
-        
+
         if (commitDetailRepository.findByCommitSha(commitSha).isPresent()) {
             logger.debug("Commit {} already processed, skipping", commitSha);
             return;
         }
-        
+
         try {
             List<Diff> diffs = gitLabApi.getCommitsApi().getDiff(project.getId(), commitSha);
-            
+
             int linesAdded = 0;
             int linesDeleted = 0;
             int filesChanged = diffs.size();
-            
+
             for (Diff diff : diffs) {
                 String diffContent = diff.getDiff();
                 if (diffContent != null) {
@@ -157,74 +162,95 @@ public class GitLabDataCollectionService {
                     }
                 }
             }
-            
+
+            // Convert Date to LocalDateTime
+            LocalDateTime commitDate = commit.getCreatedAt() != null
+                    ? commit.getCreatedAt()
+                            .toInstant()
+                            .atZone(java.time.ZoneId.systemDefault())
+                            .toLocalDateTime()
+                    : LocalDateTime.now();
+
             CommitDetail commitDetail = new CommitDetail(
                     commitSha,
-                    project.getId(),
+                    project.getId().longValue(),
                     project.getName(),
                     commit.getAuthorName(),
                     commit.getAuthorEmail(),
-                    LocalDateTime.parse(commit.getCreatedAt(), DateTimeFormatter.ISO_DATE_TIME)
-            );
-            
+                    commitDate);
+
             commitDetail.setMessage(commit.getMessage());
             commitDetail.setLinesAdded(linesAdded);
             commitDetail.setLinesDeleted(linesDeleted);
             commitDetail.setLinesChanged(linesAdded + linesDeleted);
             commitDetail.setFilesChanged(filesChanged);
-            
+
             commitDetailRepository.save(commitDetail);
             logger.debug("Saved commit detail for commit: {}", commitSha);
-            
+
             updateDeveloperStats(commitDetail);
             updateDailyStats(commitDetail);
-            
+
         } catch (Exception e) {
             logger.error("Error processing commit: {}", commitSha, e);
         }
     }
 
     private void updateDeveloperStats(CommitDetail commitDetail) {
-        Optional<DeveloperStats> existingStats = developerStatsRepository.findByDeveloperEmail(commitDetail.getAuthorEmail());
-        DeveloperStats stats = existingStats.orElse(new DeveloperStats(
-                commitDetail.getAuthorName(), 
-                commitDetail.getAuthorEmail()
-        ));
-        
+        Optional<DeveloperStats> existingStats =
+                developerStatsRepository.findByDeveloperEmail(commitDetail.getAuthorEmail());
+        DeveloperStats stats =
+                existingStats.orElse(new DeveloperStats(commitDetail.getAuthorName(), commitDetail.getAuthorEmail()));
+
         stats.setTotalCommits(stats.getTotalCommits() + 1);
         stats.setTotalLinesAdded(stats.getTotalLinesAdded() + commitDetail.getLinesAdded());
         stats.setTotalLinesDeleted(stats.getTotalLinesDeleted() + commitDetail.getLinesDeleted());
         stats.setTotalLinesChanged(stats.getTotalLinesChanged() + commitDetail.getLinesChanged());
-        
+
         if (stats.getFirstCommitDate() == null || commitDetail.getCommitDate().isBefore(stats.getFirstCommitDate())) {
             stats.setFirstCommitDate(commitDetail.getCommitDate());
         }
-        
+
         if (stats.getLastCommitDate() == null || commitDetail.getCommitDate().isAfter(stats.getLastCommitDate())) {
             stats.setLastCommitDate(commitDetail.getCommitDate());
         }
-        
+
         developerStatsRepository.save(stats);
         logger.debug("Updated developer stats for: {}", commitDetail.getAuthorEmail());
     }
 
     private void updateDailyStats(CommitDetail commitDetail) {
         LocalDate commitDate = commitDetail.getCommitDate().toLocalDate();
-        
-        Optional<DailyStats> existingStats = dailyStatsRepository.findByStatDateAndDeveloperEmail(
-                commitDate, commitDetail.getAuthorEmail());
-        DailyStats stats = existingStats.orElse(new DailyStats(
-                commitDate,
-                commitDetail.getAuthorName(),
-                commitDetail.getAuthorEmail()
-        ));
-        
+
+        Optional<DailyStats> existingStats =
+                dailyStatsRepository.findByStatDateAndDeveloperEmail(commitDate, commitDetail.getAuthorEmail());
+        DailyStats stats = existingStats.orElse(
+                new DailyStats(commitDate, commitDetail.getAuthorName(), commitDetail.getAuthorEmail()));
+
         stats.setCommitsCount(stats.getCommitsCount() + 1);
         stats.setLinesAdded(stats.getLinesAdded() + commitDetail.getLinesAdded());
         stats.setLinesDeleted(stats.getLinesDeleted() + commitDetail.getLinesDeleted());
         stats.setLinesChanged(stats.getLinesChanged() + commitDetail.getLinesChanged());
-        
+
         dailyStatsRepository.save(stats);
         logger.debug("Updated daily stats for {}: {}", commitDetail.getAuthorEmail(), commitDate);
+    }
+
+    @Async
+    @Transactional
+    public void collectProjectData(Long projectId) {
+        try {
+            logger.info("Starting GitLab data collection for project ID: {}", projectId);
+
+            Project project = gitLabApi.getProjectApi().getProject(projectId);
+            logger.info("Found project: {} ({})", project.getName(), project.getId());
+
+            updateProjectStats(project);
+            collectCommitData(project);
+
+            logger.info("GitLab data collection completed successfully for project: {}", projectId);
+        } catch (Exception e) {
+            logger.error("Error collecting GitLab data for project: {}", projectId, e);
+        }
     }
 }
