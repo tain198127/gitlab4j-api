@@ -124,7 +124,7 @@ const fetchData = async () => {
     
     if (chart) {
       const dates = trends.map(t => t.date)
-      const commits = trends.map(t => t.commitsCount)
+      const commits = trends.map(t => t.commitCount)
       const linesAdded = trends.map(t => t.linesAdded)
       const linesDeleted = trends.map(t => t.linesDeleted)
       const linesChanged = trends.map(t => t.linesChanged)
