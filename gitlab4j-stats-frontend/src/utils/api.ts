@@ -65,6 +65,15 @@ export const statisticsApi = {
     })
   },
 
+  // Multi-project stats
+  getMultiProjectStats() {
+    return api.get('/multi-project')
+  },
+
+  getDeveloperCrossProjectStats(email: string) {
+    return api.get(`/developers/${encodeURIComponent(email)}/cross-project`)
+  },
+
   // Data collection
   collectData() {
     return api.post('/collect')

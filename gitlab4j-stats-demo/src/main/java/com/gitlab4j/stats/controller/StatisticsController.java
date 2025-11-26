@@ -123,4 +123,30 @@ public class StatisticsController {
             return ResponseEntity.internalServerError().body("Error collecting project data: " + e.getMessage());
         }
     }
+
+    @GetMapping("/multi-project")
+    @ApiOperation(value = "Get multi-project statistics", notes = "Retrieve comprehensive statistics across all projects")
+    @ApiResponses({
+        @ApiResponse(code = 200, message = "Successfully retrieved multi-project statistics"),
+        @ApiResponse(code = 500, message = "Internal server error")
+    })
+    public ResponseEntity<MultiProjectStatsDTO> getMultiProjectStats() {
+        MultiProjectStatsDTO stats = statisticsService.getMultiProjectStats();
+        return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/developers/{email}/cross-project")
+    @ApiOperation(value = "Get developer cross-project statistics", notes = "Retrieve cross-project statistics for a specific developer")
+    @ApiResponses({
+        @ApiResponse(code = 200, message = "Successfully retrieved developer cross-project statistics"),
+        @ApiResponse(code = 404, message = "Developer not found"),
+        @ApiResponse(code = 500, message = "Internal server error")
+    })
+    public ResponseEntity<DeveloperCrossProjectStatsDTO> getDeveloperCrossProjectStats(@PathVariable String email) {
+        DeveloperCrossProjectStatsDTO stats = statisticsService.getDeveloperCrossProjectStats(email);
+        if (stats == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(stats);
+    }
 }

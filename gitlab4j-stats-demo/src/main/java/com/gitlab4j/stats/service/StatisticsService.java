@@ -2,7 +2,8 @@ package com.gitlab4j.stats.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -314,5 +315,177 @@ public class StatisticsService {
             endDate = LocalDate.now();
         }
         return getCommitTrend(startDate, endDate);
+    }
+
+    public MultiProjectStatsDTO getMultiProjectStats() {
+        List<ProjectStats> allProjects = projectStatsRepository.findAll();
+        List<DeveloperStats> allDevelopers = developerStatsRepository.findAll();
+        
+        int totalProjects = allProjects.size();
+        int totalDevelopers = allDevelopers.size();
+        int totalCommits = allProjects.stream().mapToInt(ProjectStats::getTotalCommits).sum();
+        int totalLinesAdded = allProjects.stream().mapToInt(ProjectStats::getTotalLinesAdded).sum();
+        int totalLinesDeleted = allProjects.stream().mapToInt(ProjectStats::getTotalLinesDeleted).sum();
+        int totalLinesChanged = allProjects.stream().mapToInt(ProjectStats::getTotalLinesChanged).sum();
+        
+        // Calculate project-developer distribution
+        Map<String, Integer> projectDeveloperDistribution = new HashMap<>();
+        List<ProjectDeveloperStatsDTO> projectDeveloperStats = new ArrayList<>();
+        
+        // Get all commit details to analyze project-developer relationships
+        List<CommitDetail> allCommits = commitDetailRepository.findAll();
+        
+        Map<String, Map<String, List<CommitDetail>>> projectDeveloperCommits = allCommits.stream()
+            .collect(Collectors.groupingBy(
+                commit -> commitDetailRepository.findById(commit.getId())
+                    .map(c -> projectStatsRepository.findByProjectId(c.getProjectId())
+                        .map(ProjectStats::getProjectName)
+                        .orElse("Unknown Project"))
+                    .orElse("Unknown Project"),
+                Collectors.groupingBy(CommitDetail::getAuthorEmail)
+            ));
+        
+        for (Map.Entry<String, Map<String, List<CommitDetail>>> projectEntry : projectDeveloperCommits.entrySet()) {
+            String projectName = projectEntry.getKey();
+            int projectDeveloperCount = projectEntry.getValue().size();
+            projectDeveloperDistribution.put(projectName, projectDeveloperCount);
+            
+            for (Map.Entry<String, List<CommitDetail>> developerEntry : projectEntry.getValue().entrySet()) {
+                String developerEmail = developerEntry.getKey();
+                List<CommitDetail> commits = developerEntry.getValue();
+                
+                DeveloperStats developer = allDevelopers.stream()
+                    .filter(d -> d.getDeveloperEmail().equals(developerEmail))
+                    .findFirst()
+                    .orElse(null);
+                
+                if (developer != null) {
+                    int commitsCount = commits.size();
+                    int linesAdded = commits.stream().mapToInt(c -> c.getLinesAdded() != null ? c.getLinesAdded() : 0).sum();
+                    int linesDeleted = commits.stream().mapToInt(c -> c.getLinesDeleted() != null ? c.getLinesDeleted() : 0).sum();
+                    int linesChanged = commits.stream().mapToInt(c -> c.getLinesChanged() != null ? c.getLinesChanged() : 0).sum();
+                    
+                    // Calculate commit frequency (commits per day)
+                    long daysBetween = java.time.temporal.ChronoUnit.DAYS.between(
+                        developer.getFirstCommitDate().toLocalDate(),
+                        developer.getLastCommitDate().toLocalDate()
+                    ) + 1;
+                    double commitFrequency = daysBetween > 0 ? (double) commitsCount / daysBetween : 0.0;
+                    
+                    projectDeveloperStats.add(new ProjectDeveloperStatsDTO(
+                        projectName,
+                        developer.getDeveloperName(),
+                        developerEmail,
+                        commitsCount,
+                        linesAdded,
+                        linesDeleted,
+                        linesChanged,
+                        commitFrequency,
+                        developer.getFirstCommitDate().toLocalDate().toString(),
+                        developer.getLastCommitDate().toLocalDate().toString()
+                    ));
+                }
+            }
+        }
+        
+        return new MultiProjectStatsDTO(
+            totalProjects,
+            totalDevelopers,
+            totalCommits,
+            totalLinesAdded,
+            totalLinesDeleted,
+            totalLinesChanged,
+            projectDeveloperDistribution,
+            projectDeveloperStats
+        );
+    }
+
+    public DeveloperCrossProjectStatsDTO getDeveloperCrossProjectStats(String developerEmail) {
+        DeveloperStats developer = developerStatsRepository.findByDeveloperEmail(developerEmail).orElse(null);
+        if (developer == null) {
+            return null;
+        }
+        
+        List<CommitDetail> developerCommits = commitDetailRepository.findByAuthorEmailOrderByCommitDateDesc(developerEmail);
+        
+        // Group commits by project
+        Map<Long, List<CommitDetail>> commitsByProject = developerCommits.stream()
+            .collect(Collectors.groupingBy(CommitDetail::getProjectId));
+        
+        int totalProjects = commitsByProject.size();
+        int totalCommits = developerCommits.size();
+        int totalLinesAdded = developer.getTotalLinesAdded();
+        int totalLinesDeleted = developer.getTotalLinesDeleted();
+        int totalLinesChanged = developer.getTotalLinesChanged();
+        
+        double averageCommitsPerProject = totalProjects > 0 ? (double) totalCommits / totalProjects : 0.0;
+        double averageLinesPerProject = totalProjects > 0 ? (double) totalLinesChanged / totalProjects : 0.0;
+        
+        // Calculate project activities
+        List<DeveloperProjectActivityDTO> projectActivities = new ArrayList<>();
+        Map<String, Integer> projectCommitCounts = new HashMap<>();
+        
+        for (Map.Entry<Long, List<CommitDetail>> entry : commitsByProject.entrySet()) {
+            Long projectId = entry.getKey();
+            List<CommitDetail> projectCommits = entry.getValue();
+            
+            String projectName = projectStatsRepository.findByProjectId(projectId)
+                .map(ProjectStats::getProjectName)
+                .orElse("Unknown Project");
+            
+            int projectCommitsCount = projectCommits.size();
+            int projectLinesAdded = projectCommits.stream().mapToInt(c -> c.getLinesAdded() != null ? c.getLinesAdded() : 0).sum();
+            int projectLinesDeleted = projectCommits.stream().mapToInt(c -> c.getLinesDeleted() != null ? c.getLinesDeleted() : 0).sum();
+            int projectLinesChanged = projectCommits.stream().mapToInt(c -> c.getLinesChanged() != null ? c.getLinesChanged() : 0).sum();
+            
+            projectCommitCounts.put(projectName, projectCommitsCount);
+            
+            // Calculate activity score based on commits and lines changed
+            double activityScore = (projectCommitsCount * 0.6) + (projectLinesChanged * 0.004);
+            
+            DeveloperProjectActivityDTO activity = new DeveloperProjectActivityDTO(
+                projectName,
+                projectCommitsCount,
+                projectLinesAdded,
+                projectLinesDeleted,
+                projectLinesChanged,
+                projectCommits.get(0).getCommitDate().toLocalDate().toString(),
+                projectCommits.get(projectCommits.size() - 1).getCommitDate().toLocalDate().toString(),
+                activityScore
+            );
+            
+            projectActivities.add(activity);
+        }
+        
+        // Sort by activity score to find most and least active projects
+        projectActivities.sort((a, b) -> Double.compare(b.getActivityScore(), a.getActivityScore()));
+        
+        String mostActiveProject = projectActivities.isEmpty() ? "None" : projectActivities.get(0).getProjectName();
+        String leastActiveProject = projectActivities.isEmpty() ? "None" : 
+            projectActivities.get(projectActivities.size() - 1).getProjectName();
+        
+        // Calculate commit frequency score (0-100)
+        long totalDays = java.time.temporal.ChronoUnit.DAYS.between(
+            developer.getFirstCommitDate().toLocalDate(),
+            developer.getLastCommitDate().toLocalDate()
+        ) + 1;
+        double commitFrequencyScore = totalDays > 0 ? Math.min(100.0, (totalCommits * 100.0) / totalDays) : 0.0;
+        
+        return new DeveloperCrossProjectStatsDTO(
+            developer.getDeveloperName(),
+            developerEmail,
+            totalProjects,
+            totalCommits,
+            totalLinesAdded,
+            totalLinesDeleted,
+            totalLinesChanged,
+            averageCommitsPerProject,
+            averageLinesPerProject,
+            projectCommitCounts,
+            projectActivities,
+            mostActiveProject,
+            leastActiveProject,
+            commitFrequencyScore
+        );
     }
 }
