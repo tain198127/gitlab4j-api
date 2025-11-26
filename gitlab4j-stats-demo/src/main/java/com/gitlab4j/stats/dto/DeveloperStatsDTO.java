@@ -2,14 +2,33 @@ package com.gitlab4j.stats.dto;
 
 import java.time.LocalDateTime;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
+@ApiModel(description = "Developer statistics data transfer object")
 public class DeveloperStatsDTO {
+    @ApiModelProperty(value = "Developer name", example = "John Doe")
     private String developerName;
+    
+    @ApiModelProperty(value = "Developer email address", example = "john.doe@example.com")
     private String developerEmail;
+    
+    @ApiModelProperty(value = "Total number of commits", example = "150")
     private Integer totalCommits;
+    
+    @ApiModelProperty(value = "Total lines of code added", example = "5000")
     private Integer totalLinesAdded;
+    
+    @ApiModelProperty(value = "Total lines of code deleted", example = "2000")
     private Integer totalLinesDeleted;
+    
+    @ApiModelProperty(value = "Total lines of code changed (added + deleted)", example = "7000")
     private Integer totalLinesChanged;
+    
+    @ApiModelProperty(value = "Date of first commit", example = "2023-01-01T10:00:00")
     private LocalDateTime firstCommitDate;
+    
+    @ApiModelProperty(value = "Date of last commit", example = "2023-12-31T18:30:00")
     private LocalDateTime lastCommitDate;
 
     public DeveloperStatsDTO() {}

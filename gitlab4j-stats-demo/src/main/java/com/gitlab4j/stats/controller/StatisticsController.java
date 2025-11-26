@@ -12,9 +12,16 @@ import com.gitlab4j.stats.dto.*;
 import com.gitlab4j.stats.service.GitLabDataCollectionService;
 import com.gitlab4j.stats.service.StatisticsService;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+
 @RestController
 @RequestMapping("/api/stats")
 @CrossOrigin(origins = "*")
+@Api(tags = "GitLab Statistics API", description = "Provides comprehensive statistics and analytics for GitLab projects")
 public class StatisticsController {
 
     @Autowired
@@ -24,8 +31,16 @@ public class StatisticsController {
     private GitLabDataCollectionService dataCollectionService;
 
     @GetMapping("/developers")
+    @ApiOperation(value = "Get developer statistics", notes = "Retrieve developer statistics with optional limit and sorting")
+    @ApiResponses({
+        @ApiResponse(code = 200, message = "Successfully retrieved developer statistics"),
+        @ApiResponse(code = 500, message = "Internal server error")
+    })
     public ResponseEntity<List<DeveloperStatsDTO>> getDeveloperStats(
-            @RequestParam(defaultValue = "10") int limit, @RequestParam(defaultValue = "linesChanged") String sortBy) {
+            @ApiParam(value = "Maximum number of results to return", defaultValue = "10") 
+            @RequestParam(defaultValue = "10") int limit, 
+            @ApiParam(value = "Field to sort by (linesChanged, commits, additions, deletions)", defaultValue = "linesChanged") 
+            @RequestParam(defaultValue = "linesChanged") String sortBy) {
         List<DeveloperStatsDTO> stats = statisticsService.getDeveloperStats(limit, sortBy);
         return ResponseEntity.ok(stats);
     }
@@ -58,6 +73,11 @@ public class StatisticsController {
     }
 
     @GetMapping("/summary")
+    @ApiOperation(value = "Get summary statistics", notes = "Retrieve overall summary statistics for all projects and developers")
+    @ApiResponses({
+        @ApiResponse(code = 200, message = "Successfully retrieved summary statistics"),
+        @ApiResponse(code = 500, message = "Internal server error")
+    })
     public ResponseEntity<SummaryStatsDTO> getSummaryStats() {
         SummaryStatsDTO stats = statisticsService.getSummaryStats();
         return ResponseEntity.ok(stats);
@@ -80,6 +100,11 @@ public class StatisticsController {
     }
 
     @PostMapping("/collect")
+    @ApiOperation(value = "Collect GitLab data", notes = "Trigger data collection from GitLab API")
+    @ApiResponses({
+        @ApiResponse(code = 200, message = "Data collection completed successfully"),
+        @ApiResponse(code = 500, message = "Error collecting data")
+    })
     public ResponseEntity<String> collectData() {
         try {
             dataCollectionService.collectGitLabData();
