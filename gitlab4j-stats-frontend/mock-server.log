@@ -1,0 +1,9 @@
+Mock server running on http://localhost:8080
+Available endpoints:
+  GET /api/statistics/summary
+  GET /api/statistics/developers
+  GET /api/statistics/commit-trends
+  POST /api/statistics/collect
+  GET /api/statistics/projects
+  GET /api/statistics/daily
+  GET /api/statistics/activity

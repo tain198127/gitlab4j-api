@@ -1,0 +1,152 @@
+package com.gitlab4j.stats.controller;
+
+import java.time.LocalDate;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import com.gitlab4j.stats.dto.*;
+import com.gitlab4j.stats.service.GitLabDataCollectionService;
+import com.gitlab4j.stats.service.StatisticsService;
+
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+
+@RestController
+@RequestMapping("/stats")
+@CrossOrigin(origins = "*")
+@Api(tags = "GitLab Statistics API", description = "Provides comprehensive statistics and analytics for GitLab projects")
+public class StatisticsController {
+
+    @Autowired
+    private StatisticsService statisticsService;
+
+    @Autowired
+    private GitLabDataCollectionService dataCollectionService;
+
+    @GetMapping("/developers")
+    @ApiOperation(value = "Get developer statistics", notes = "Retrieve developer statistics with optional limit and sorting")
+    @ApiResponses({
+        @ApiResponse(code = 200, message = "Successfully retrieved developer statistics"),
+        @ApiResponse(code = 500, message = "Internal server error")
+    })
+    public ResponseEntity<List<DeveloperStatsDTO>> getDeveloperStats(
+            @ApiParam(value = "Maximum number of results to return", defaultValue = "10") 
+            @RequestParam(defaultValue = "10") int limit, 
+            @ApiParam(value = "Field to sort by (linesChanged, commits, additions, deletions)", defaultValue = "linesChanged") 
+            @RequestParam(defaultValue = "linesChanged") String sortBy) {
+        List<DeveloperStatsDTO> stats = statisticsService.getDeveloperStats(limit, sortBy);
+        return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/developers/{email}")
+    public ResponseEntity<DeveloperStatsDTO> getDeveloperStatsByEmail(@PathVariable String email) {
+        DeveloperStatsDTO stats = statisticsService.getDeveloperStatsByEmail(email);
+        return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/daily")
+    public ResponseEntity<List<DailyStatsDTO>> getDailyStats(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) String developerEmail) {
+        List<DailyStatsDTO> stats = statisticsService.getDailyStats(startDate, endDate, developerEmail);
+        return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/projects")
+    public ResponseEntity<List<ProjectStatsDTO>> getProjectStats() {
+        List<ProjectStatsDTO> stats = statisticsService.getProjectStats();
+        return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/projects/{projectId}")
+    public ResponseEntity<ProjectStatsDTO> getProjectStatsById(@PathVariable Integer projectId) {
+        ProjectStatsDTO stats = statisticsService.getProjectStatsById(projectId);
+        return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/summary")
+    @ApiOperation(value = "Get summary statistics", notes = "Retrieve overall summary statistics for all projects and developers")
+    @ApiResponses({
+        @ApiResponse(code = 200, message = "Successfully retrieved summary statistics"),
+        @ApiResponse(code = 500, message = "Internal server error")
+    })
+    public ResponseEntity<SummaryStatsDTO> getSummaryStats() {
+        SummaryStatsDTO stats = statisticsService.getSummaryStats();
+        return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/activity")
+    public ResponseEntity<List<DeveloperActivityDTO>> getDeveloperActivity(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        List<DeveloperActivityDTO> activity = statisticsService.getDeveloperActivity(startDate, endDate);
+        return ResponseEntity.ok(activity);
+    }
+
+    @GetMapping("/trends")
+    public ResponseEntity<List<CommitTrendDTO>> getCommitTrends(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        List<CommitTrendDTO> trends = statisticsService.getCommitTrends(startDate, endDate);
+        return ResponseEntity.ok(trends);
+    }
+
+    @PostMapping("/collect")
+    @ApiOperation(value = "Collect GitLab data", notes = "Trigger data collection from GitLab API")
+    @ApiResponses({
+        @ApiResponse(code = 200, message = "Data collection completed successfully"),
+        @ApiResponse(code = 500, message = "Error collecting data")
+    })
+    public ResponseEntity<String> collectData() {
+        try {
+            dataCollectionService.collectGitLabData();
+            return ResponseEntity.ok("Data collection completed successfully");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error collecting data: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/collect/project/{projectId}")
+    public ResponseEntity<String> collectProjectData(@PathVariable Integer projectId) {
+        try {
+            dataCollectionService.collectProjectData(projectId.longValue());
+            return ResponseEntity.ok("Project data collection completed successfully");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error collecting project data: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/multi-project")
+    @ApiOperation(value = "Get multi-project statistics", notes = "Retrieve comprehensive statistics across all projects")
+    @ApiResponses({
+        @ApiResponse(code = 200, message = "Successfully retrieved multi-project statistics"),
+        @ApiResponse(code = 500, message = "Internal server error")
+    })
+    public ResponseEntity<MultiProjectStatsDTO> getMultiProjectStats() {
+        MultiProjectStatsDTO stats = statisticsService.getMultiProjectStats();
+        return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/developers/{email}/cross-project")
+    @ApiOperation(value = "Get developer cross-project statistics", notes = "Retrieve cross-project statistics for a specific developer")
+    @ApiResponses({
+        @ApiResponse(code = 200, message = "Successfully retrieved developer cross-project statistics"),
+        @ApiResponse(code = 404, message = "Developer not found"),
+        @ApiResponse(code = 500, message = "Internal server error")
+    })
+    public ResponseEntity<DeveloperCrossProjectStatsDTO> getDeveloperCrossProjectStats(@PathVariable String email) {
+        DeveloperCrossProjectStatsDTO stats = statisticsService.getDeveloperCrossProjectStats(email);
+        if (stats == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(stats);
+    }
+}
